@@ -1,0 +1,17 @@
+{
+  "name": "productdb-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": "1",
+    "database.hostname": "infrastructure-postgres-1",
+    "database.port": "5432",
+    "database.user": "debezium_user",
+    "database.password": "debezium_user_1234",
+    "database.dbname": "productdb",
+    "database.server.name": "productdb_server",
+    "table.include.list": "public.products",
+    "plugin.name": "pgoutput",
+    "publication.name": "productdb_pub",
+    "snapshot.mode": "initial"
+  }
+}

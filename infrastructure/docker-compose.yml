@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    container_name: rsystem-zookeeper
+    restart: always
+    image: wurstmeister/zookeeper:latest
+    ports:
+      - "2181:2181"
+    networks:
+      - rsystem
+    volumes:
+      - rsystem-zookeeper-data:/data
+      - rsystem-zookeeper-datalog:/datalog
+
+  kafka:
+    container_name: kafka
+    restart: always
+    networks:
+      - rsystem
+    image: wurstmeister/kafka:latest 
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+      - "9999:9999"
+    environment:
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_BROKER_ID: 1
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_JMX_PORT: 9999
+      KAFKA_JMX_HOSTNAME: ${DOCKER_HOST_IP:-127.0.0.1}
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true 
+    depends_on:
+      - zookeeper
+    volumes:
+      - rsystem-kafka_data:/var/lib/kafka/data
+      - /var/run/docker.sock:/var/kafka/run/docker.sock
+
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root1234
+      POSTGRES_DB: productdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - rsystem
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: postgres -c wal_level=logical -c max_replication_slots=4 -c max_wal_senders=4
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    depends_on:
+      - postgres
+    networks:
+      - rsystem
+    ports:
+      - "8080:8080"
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - rsystem
+    volumes:
+      - rsystem_redis:/app/volumes/redis
+
+  kconnect:
+    image: debezium/connect:1.4
+    platform: linux/amd64
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:29092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_config
+      OFFSET_STORAGE_TOPIC: connect_offset
+      STATUS_STORAGE_TOPIC: connect_status
+    depends_on:
+      - kafka
+    networks:
+      - rsystem
+
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j
+    environment:
+      - NEO4J_AUTH=neo4j/ntaf5ouli
+    ports:
+      - "7474:7474"    
+      - "7687:7687"  
+    volumes:
+      - neo4j_data:/data  
+    networks:
+      - rsystem
+
+
+networks:
+  rsystem:
+    external: true
+    name: rsystem
+    attachable: true
+
+volumes:
+  rsystem-zookeeper-data: {}
+  rsystem-zookeeper-datalog: {}
+  rsystem-kafka_data: {}
+  rsystem_redis: {}
+  neo4j_data:
+    driver: local
+

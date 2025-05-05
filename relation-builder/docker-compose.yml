@@ -1,0 +1,21 @@
+
+networks:
+  rsystem:
+    external: true
+    name: rsystem
+    attachable: true
+
+services: 
+  relation-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: 
+      - "5004:5004"  
+    environment:  
+      - PORT=5004
+      - Neo4jURI=bolt://neo4j:7687
+      - Neo4jUser=neo4j
+      - Neo4jPassword=ntaf5ouli
+    networks:
+      - rsystem

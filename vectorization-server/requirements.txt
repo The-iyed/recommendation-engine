@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+kafka-python
+requests
+torch
+torchvision
+Pillow
+python-dotenv
+sentence_transformers

@@ -1,0 +1,18 @@
+
+networks:
+  rsystem:
+    external: true
+    name: rsystem
+    attachable: true
+
+services: 
+  recommendation-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: 
+      - "5002:5002"  
+    environment:  
+      - PORT=5002
+    networks:
+      - rsystem

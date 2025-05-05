@@ -1,0 +1,22 @@
+
+networks:
+  rsystem:
+    external: true
+    name: rsystem
+    attachable: true
+
+services: 
+  entities-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: 
+      - "5001:5001"  
+    environment:  
+      - PORT=5001
+      - PATH=http://localhost:5001/
+      - CLOUDINARY_CLOUD_NAME=dp0ihnveb
+      - CLOUDINARY_API_KEY=952652395925638
+      - CLOUDINARY_API_SECRET=fzqP7KHCS-cSgCNg-fZoHoy9BQU
+    networks:
+      - rsystem

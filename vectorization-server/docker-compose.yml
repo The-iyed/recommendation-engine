@@ -1,0 +1,21 @@
+
+
+networks:
+  rsystem:
+    external: true
+    name: rsystem
+    attachable: true
+
+services: 
+  vectorization-server:
+    build: .
+    container_name: vectorization-server
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+    restart: always
+    ports:
+      - "5003:5003"
+    networks:
+      - rsystem
+    volumes:
+      - .:/app
